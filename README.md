@@ -6,3 +6,6 @@ https://drive.google.com/file/d/16eVExXOIvrD9HpyCaMCSsUFNk3nGP9J-/view?usp=drive
 
 not normalized schema diagram
 https://drive.google.com/file/d/1C2SqAe_6rIEkk_Z7ED7VEC7z_rW7EpDb/view?usp=drive_link
+
+Schema diagram (check this one)
+https://dbdiagram.io/d/69e0e7dd0f7c9ef2c0140aea
