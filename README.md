@@ -12,3 +12,9 @@ https://dbdiagram.io/d/69e0e7dd0f7c9ef2c0140aea
 
 project features
 https://docs.google.com/document/d/1bCqZ29sDkbQHVLqggxZbfEzZP9jUa9IxBuKehjh37SE/edit?tab=t.0
+
+Schema Drawing draw.io pdf
+https://drive.google.com/file/d/1EfMCXC-miuPVN-sFCZK1pmmqYV9DTzYu/view?usp=drive_link
+
+Schema Drawing svg file
+https://drive.google.com/file/d/16etnvreI_V4Bf72KjZfzohhCdg6Y9sMr/view?usp=drive_link
