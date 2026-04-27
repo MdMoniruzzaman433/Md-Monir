@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Water Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F4F8;
+      min-height: 100vh;
+      color: #2C2C2A;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      background: linear-gradient(135deg, #042C53, #0C447C);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 62px;
+      box-shadow: 0 2px 12px rgba(4,44,83,0.25);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .navbar-brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .drop-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(145deg, #185FA5, #1D9E75);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .drop-icon svg { width: 18px; height: 18px; fill: white; }
+    .navbar-brand h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px; color: white; font-weight: 600;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white; padding: 6px 16px;
+      border-radius: 8px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 13px;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* ── MAIN LAYOUT ── */
+    .main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+
+    .welcome {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; color: #042C53; margin-bottom: 1.5rem;
+    }
+    .welcome span { color: #185FA5; }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+
+    .info-card {
+      background: white; border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 2px 10px rgba(4,44,83,0.08);
+    }
+    .info-card .card-label {
+      font-size: 11px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #888780; margin-bottom: 0.5rem;
+    }
+    .info-card .card-value {
+      font-size: 20px; font-weight: 500; color: #042C53;
+    }
+    .info-card .card-sub {
+      font-size: 13px; color: #5F5E5A; margin-top: 4px;
+    }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 20px; font-size: 12px; font-weight: 500;
+    }
+    .badge.active   { background: #EAF3DE; color: #3B6D11; }
+    .badge.inactive { background: #FCEBEB; color: #A32D2D; }
+    .badge.working  { background: #EAF3DE; color: #3B6D11; }
+    .badge.faulty   { background: #FCEBEB; color: #A32D2D; }
+    .badge.paid     { background: #EAF3DE; color: #3B6D11; }
+    .badge.unpaid   { background: #FFF3CD; color: #856404; }
+    .badge.overdue  { background: #FCEBEB; color: #A32D2D; }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 15px; font-weight: 500; color: #042C53;
+      margin-bottom: 1rem; padding-bottom: 8px;
+      border-bottom: 2px solid #E2E8F0;
+    }
+
+    /* ── BILLS TABLE ── */
+    .table-wrap {
+      background: white; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(4,44,83,0.08);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #042C53; }
+    thead th {
+      padding: 12px 16px; text-align: left;
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    tbody tr { border-bottom: 1px solid #F0F4F8; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #F7FAFC; }
+    tbody td { padding: 12px 16px; font-size: 14px; color: #2C2C2A; }
+
+    /* ── LOADING / ERROR ── */
+    .loading {
+      text-align: center; padding: 4rem 2rem; color: #888780;
+    }
+    .spinner-lg {
+      width: 40px; height: 40px;
+      border: 3px solid #E2E8F0; border-top-color: #185FA5;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      background: #FCEBEB; color: #A32D2D;
+      border-radius: 12px; padding: 1.5rem;
+      text-align: center; margin-top: 2rem;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      thead th:nth-child(3),
+      tbody td:nth-child(3),
+      thead th:nth-child(5),
+      tbody td:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0014 0C19 10.5 12 2 12 2z"/></svg>
+    </div>
+    <h1>Water Management System</h1>
+  </div>
+  <button class="logout-btn" onclick="logout()">Sign Out</button>
+</nav>
+
+<div class="main" id="main-content">
+  <div class="loading">
+    <div class="spinner-lg"></div>
+    <p>Loading your dashboard...</p>
+  </div>
+</div>
+
+<script>
+  // ── Get customer_id stored after sign in ──────────────────
+  const customerId = sessionStorage.getItem('customer_id');
+  const customerName = sessionStorage.getItem('customer_name');
+
+  if (!customerId) {
+    // Not logged in — redirect back
+    window.location.href = 'index.html';
+  }
+
+  function logout() {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+
+  function statusBadge(status) {
+    if (!status) return '';
+    const cls = status.toLowerCase();
+    return `<span class="badge ${cls}">${status}</span>`;
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  async function loadDashboard() {
+    try {
+      const res  = await fetch('dashboard_data.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: customerId })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        document.getElementById('main-content').innerHTML =
+          `<div class="error-box">⚠️ ${data.message}</div>`;
+        return;
+      }
+
+      const c = data.customer;
+      const meters = data.meters;
+      const bills  = data.bills;
+
+      // Primary meter (first one)
+      const meter = meters.length > 0 ? meters[0] : null;
+
+      // Latest bill status
+      const latestBill = bills.length > 0 ? bills[0] : null;
+
+      // Build summary cards
+      const cardsHTML = `
+        <div class="info-card">
+          <div class="card-label">Customer ID</div>
+          <div class="card-value">#${c.Customer_ID}</div>
+          <div class="card-sub">Registered: ${formatDate(c.Date)}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="card-label">Full Name</div>
+          <div class="card-value">${c.Name}</div>
+          <div class="card-sub">Account: ${statusBadge(c.Status)}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="card-label">Address</div>
+          <div class="card-value" style="font-size:15px">${c.Address || '—'}</div>
+          <div class="card-sub">Phone: ${data.phones.length > 0 ? data.phones.join(', ') : '—'}</div>
+        </div>
+
+        <div class="info-card">
+          <div class="card-label">Meter ID</div>
+          <div class="card-value">${meter ? '#' + meter.Meter_ID : '—'}</div>
+          <div class="card-sub">
+            ${meter ? `Type: ${meter.m_type} &nbsp;|&nbsp; Status: ${statusBadge(meter.m_status)}` : 'No meter assigned'}
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="card-label">Latest Bill Status</div>
+          <div class="card-value">${latestBill ? statusBadge(latestBill.payment_status) : '—'}</div>
+          <div class="card-sub">
+            ${latestBill
+              ? `Amount: <strong>৳${parseFloat(latestBill.total_payable).toFixed(2)}</strong> &nbsp;|&nbsp; Due: ${formatDate(latestBill.bill_date)}`
+              : 'No bills yet'}
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="card-label">Connection Type</div>
+          <div class="card-value" style="font-size:15px">${meter ? meter.c_type : '—'}</div>
+          <div class="card-sub">Since: ${meter ? formatDate(meter.c_date) : '—'}</div>
+        </div>
+      `;
+
+      // Build bills table
+      const billRows = bills.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:2rem">No bills found.</td></tr>`
+        : bills.map(b => `
+            <tr>
+              <td>#${b.Bill_ID}</td>
+              <td>${formatDate(b.bill_date)}</td>
+              <td>${parseFloat(b.units_consumed).toFixed(2)} units</td>
+              <td>৳${parseFloat(b.fixed_bill).toFixed(2)} + ৳${parseFloat(b.tax).toFixed(2)} tax + ৳${parseFloat(b.penalty).toFixed(2)} penalty</td>
+              <td><strong>৳${parseFloat(b.total_payable).toFixed(2)}</strong></td>
+              <td>${statusBadge(b.payment_status)}</td>
+            </tr>
+          `).join('');
+
+      document.getElementById('main-content').innerHTML = `
+        <p class="welcome">Welcome back, <span>${c.Name}</span> 👋</p>
+
+        <p class="section-title">Your Profile Summary</p>
+        <div class="cards-grid">${cardsHTML}</div>
+
+        <p class="section-title">Billing History</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bill ID</th>
+                <th>Date</th>
+                <th>Consumption</th>
+                <th>Breakdown</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>${billRows}</tbody>
+          </table>
+        </div>
+      `;
+
+    } catch (err) {
+      document.getElementById('main-content').innerHTML =
+        `<div class="error-box">⚠️ Could not connect to server. Make sure XAMPP is running.</div>`;
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

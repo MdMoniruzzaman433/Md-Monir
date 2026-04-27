@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bill Management — Water Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #F0F4F8; min-height: 100vh; color: #2C2C2A; }
+
+    .navbar {
+      background: linear-gradient(135deg, #042C53, #0C447C);
+      padding: 0 2rem; display: flex; align-items: center;
+      justify-content: space-between; height: 62px;
+      box-shadow: 0 2px 12px rgba(4,44,83,0.25);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .navbar-brand { display: flex; align-items: center; gap: 10px; }
+    .drop-icon { width: 34px; height: 34px; background: linear-gradient(145deg, #185FA5, #1D9E75); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .drop-icon svg { width: 18px; height: 18px; fill: white; }
+    .navbar-brand h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: white; font-weight: 600; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; text-decoration: none; transition: background 0.2s; }
+    .nav-link:hover { background: rgba(255,255,255,0.22); }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #042C53; margin-bottom: 0.3rem; }
+    .page-sub { font-size: 13px; color: #888780; margin-bottom: 1.75rem; }
+
+    /* Summary cards */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: white; border-radius: 14px; padding: 1.1rem 1.5rem; box-shadow: 0 2px 10px rgba(4,44,83,0.07); }
+    .stat-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: #888780; margin-bottom: 6px; }
+    .stat-value { font-size: 22px; font-weight: 500; color: #042C53; }
+    .stat-sub { font-size: 12px; color: #5F5E5A; margin-top: 3px; }
+
+    /* Filters */
+    .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .filter-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid #D3D1C7; background: white; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; color: #5F5E5A; transition: all 0.2s; }
+    .filter-btn.active { background: #042C53; color: white; border-color: #042C53; }
+    .action-btn-sm { padding: 5px 12px; border-radius: 7px; border: 1px solid #D3D1C7; background: white; font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; color: #042C53; transition: all 0.2s; }
+    .action-btn-sm:hover { background: #F1EFE8; }
+    .action-btn-sm.danger { border-color: #F7C1C1; color: #A32D2D; }
+    .action-btn-sm.danger:hover { background: #FCEBEB; }
+    .action-btn-sm.success { border-color: #C0DD97; color: #3B6D11; }
+    .action-btn-sm.success:hover { background: #EAF3DE; }
+
+    .bulk-btn { padding: 8px 16px; border-radius: 8px; border: none; background: #A32D2D; color: white; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; margin-left: auto; }
+    .bulk-btn:hover { opacity: 0.88; }
+
+    /* Table */
+    .card { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(4,44,83,0.08); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #042C53; }
+    thead th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #F0F4F8; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #F7FAFC; }
+    tbody td { padding: 10px 14px; font-size: 13px; vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+    .badge.paid    { background: #EAF3DE; color: #3B6D11; }
+    .badge.unpaid  { background: #FFF3CD; color: #856404; }
+    .badge.overdue { background: #FCEBEB; color: #A32D2D; }
+    .badge.subsidy { background: #E6F1FB; color: #0C447C; font-size: 10px; margin-left: 4px; }
+
+    .actions-cell { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .toast { display: none; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 1rem; font-weight: 500; }
+    .toast.success { background: #EAF3DE; color: #3B6D11; display: block; }
+    .toast.error   { background: #FCEBEB; color: #A32D2D; display: block; }
+
+    @media (max-width: 700px) {
+      thead th:nth-child(3), tbody td:nth-child(3),
+      thead th:nth-child(4), tbody td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="drop-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0014 0C19 10.5 12 2 12 2z"/></svg>
+    </div>
+    <h1>Water Management System</h1>
+  </div>
+  <div class="nav-links">
+    <a href="add_reading.html" class="nav-link">Add Reading</a>
+    <a href="index.html" class="nav-link" onclick="sessionStorage.clear()">Sign Out</a>
+  </div>
+</nav>
+
+<div class="main">
+  <p class="page-title">Bill Management</p>
+  <p class="page-sub">View all bills, mark payments, and apply penalties for overdue accounts.</p>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Bills</div>
+      <div class="stat-value" id="s-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Billed</div>
+      <div class="stat-value" id="s-billed">—</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Collected</div>
+      <div class="stat-value" id="s-collected" style="color:#3B6D11">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Outstanding</div>
+      <div class="stat-value" id="s-overdue" style="color:#A32D2D">—</div>
+      <div class="stat-sub">Overdue amount</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterBills('all', this)">All</button>
+    <button class="filter-btn" onclick="filterBills('Unpaid', this)">Unpaid</button>
+    <button class="filter-btn" onclick="filterBills('Overdue', this)">Overdue</button>
+    <button class="filter-btn" onclick="filterBills('Paid', this)">Paid</button>
+    <button class="bulk-btn" onclick="bulkOverdue()">⚠ Mark All Overdue (30+ days)</button>
+  </div>
+
+  <!-- Bills Table -->
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Bill #</th>
+          <th>Customer</th>
+          <th>Meter</th>
+          <th>Units</th>
+          <th>Fixed</th>
+          <th>Tax</th>
+          <th>Penalty</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="bills-tbody">
+        <tr><td colspan="10" style="text-align:center;color:#888;padding:2rem">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let currentFilter = 'all';
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.innerHTML = msg; t.className = 'toast ' + type;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => t.className = 'toast', 5000);
+  }
+
+  function fmt(n)   { return '৳' + parseFloat(n).toFixed(2); }
+  function fmtUnits(n) { return parseFloat(n).toFixed(2); }
+
+  function filterBills(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadBills();
+  }
+
+  async function loadBills() {
+    try {
+      const res  = await fetch('generate_bill.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_bills', status: currentFilter })
+      });
+      const data = await res.json();
+      if (!data.success) { showToast(data.message, 'error'); return; }
+
+      // Update summary
+      const s = data.summary;
+      document.getElementById('s-total').textContent     = s.total_bills;
+      document.getElementById('s-billed').textContent    = fmt(s.total_billed);
+      document.getElementById('s-collected').textContent = fmt(s.total_collected);
+      document.getElementById('s-overdue').textContent   = fmt(s.total_overdue);
+
+      // Render table
+      const tbody = document.getElementById('bills-tbody');
+      if (data.bills.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:2rem">No bills found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.bills.map(b => {
+        const subsidyBadge = (b.Income > 0 && b.Income < 30000)
+          ? '<span class="badge subsidy">Subsidy</span>' : '';
+        const statusCls = b.payment_status.toLowerCase();
+        const actions = b.payment_status !== 'Paid'
+          ? `<button class="action-btn-sm success" onclick="markPaid(${b.Bill_ID})">Mark Paid</button>
+             <button class="action-btn-sm danger"  onclick="addPenalty(${b.Bill_ID})">+ Penalty</button>`
+          : `<span style="color:#888;font-size:12px">Paid ${b.payment_date || ''}</span>`;
+        return `
+          <tr>
+            <td>#${b.Bill_ID}</td>
+            <td>${b.customer_name}${subsidyBadge}<br><span style="color:#888;font-size:11px">#${b.Customer_ID}</span></td>
+            <td>#${b.Meter_ID}</td>
+            <td>${fmtUnits(b.units_consumed)}</td>
+            <td>${fmt(b.fixed_bill)}</td>
+            <td>${fmt(b.tax)}</td>
+            <td>${fmt(b.penalty)}</td>
+            <td><strong>${fmt(b.total_payable)}</strong></td>
+            <td><span class="badge ${statusCls}">${b.payment_status}</span></td>
+            <td><div class="actions-cell">${actions}</div></td>
+          </tr>`;
+      }).join('');
+    } catch(e) {
+      showToast('Could not connect to server. Make sure XAMPP is running.', 'error');
+    }
+  }
+
+  async function markPaid(billId) {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const res  = await fetch('generate_bill.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_paid', bill_id: billId, payment_date: today })
+      });
+      const data = await res.json();
+      showToast(data.message, data.success ? 'success' : 'error');
+      if (data.success) loadBills();
+    } catch(e) { showToast('Server error.', 'error'); }
+  }
+
+  async function addPenalty(billId) {
+    if (!confirm('Add ৳50 penalty and mark bill as Overdue?')) return;
+    try {
+      const res  = await fetch('generate_bill.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_penalty', bill_id: billId })
+      });
+      const data = await res.json();
+      showToast(data.message, data.success ? 'success' : 'error');
+      if (data.success) loadBills();
+    } catch(e) { showToast('Server error.', 'error'); }
+  }
+
+  async function bulkOverdue() {
+    if (!confirm('This will mark ALL unpaid bills older than 30 days as Overdue and add ৳50 penalty to each. Continue?')) return;
+    try {
+      const res  = await fetch('generate_bill.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk_overdue' })
+      });
+      const data = await res.json();
+      showToast(data.message, data.success ? 'success' : 'error');
+      if (data.success) loadBills();
+    } catch(e) { showToast('Server error.', 'error'); }
+  }
+
+  loadBills();
+</script>
+</body>
+</html>
