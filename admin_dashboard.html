@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — Water Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --navy:#042C53;--blue:#185FA5;--blue-mid:#0C447C;
+      --green:#1D9E75;--bg:#F0F4F8;--white:#fff;
+      --text:#2C2C2A;--muted:#888780;--border:#E2E8F0;
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+    /* ── SIDEBAR ── */
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;width:220px;
+      background:linear-gradient(180deg,#042C53 0%,#061E3A 100%);
+      z-index:200;display:flex;flex-direction:column;
+      padding:0 0 1.5rem;
+    }
+    .sidebar-logo{
+      padding:1.5rem 1.25rem 1.25rem;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      margin-bottom:1rem;
+    }
+    .sidebar-logo .drop{
+      width:36px;height:36px;border-radius:50%;
+      background:linear-gradient(145deg,#185FA5,#1D9E75);
+      display:flex;align-items:center;justify-content:center;margin-bottom:10px;
+    }
+    .sidebar-logo .drop svg{width:18px;height:18px;fill:white;}
+    .sidebar-logo h2{font-family:'Playfair Display',serif;font-size:14px;color:white;font-weight:600;line-height:1.4;}
+    .sidebar-logo .admin-chip{
+      display:inline-block;margin-top:6px;
+      background:rgba(24,95,165,0.3);border:1px solid rgba(24,95,165,0.5);
+      color:#85B7EB;font-size:10px;font-family:'DM Mono',monospace;
+      padding:2px 8px;border-radius:20px;letter-spacing:0.8px;
+    }
+    .nav-section{padding:0 0.75rem;margin-bottom:0.5rem;}
+    .nav-label{font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.3);letter-spacing:1px;text-transform:uppercase;padding:0 0.5rem;margin-bottom:0.5rem;}
+    .nav-item{
+      display:flex;align-items:center;gap:10px;
+      padding:9px 12px;border-radius:10px;cursor:pointer;
+      color:rgba(255,255,255,0.55);font-size:13px;
+      transition:all 0.18s;margin-bottom:2px;border:none;background:transparent;
+      width:100%;text-align:left;font-family:'DM Sans',sans-serif;
+    }
+    .nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85);}
+    .nav-item.active{background:rgba(24,95,165,0.3);color:white;font-weight:500;}
+    .nav-item .icon{width:16px;height:16px;opacity:0.7;flex-shrink:0;}
+    .nav-item.active .icon{opacity:1;}
+    .sidebar-footer{margin-top:auto;padding:0 0.75rem;}
+    .logout-btn{
+      display:flex;align-items:center;gap:8px;width:100%;
+      padding:9px 12px;border-radius:10px;background:rgba(163,45,45,0.2);
+      border:1px solid rgba(163,45,45,0.3);color:#F09595;
+      font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.18s;
+    }
+    .logout-btn:hover{background:rgba(163,45,45,0.35);}
+
+    /* ── MAIN ── */
+    .main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column;}
+
+    /* ── TOPBAR ── */
+    .topbar{
+      background:white;border-bottom:1px solid var(--border);
+      padding:0 2rem;height:58px;display:flex;align-items:center;
+      justify-content:space-between;position:sticky;top:0;z-index:100;
+    }
+    .topbar-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);}
+    .topbar-right{display:flex;align-items:center;gap:12px;}
+    .admin-tag{font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);}
+    .topbar-action{
+      padding:7px 16px;border-radius:8px;border:none;cursor:pointer;
+      font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all 0.2s;
+    }
+    .btn-primary{background:var(--blue);color:white;}
+    .btn-primary:hover{background:var(--blue-mid);}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+    .btn-outline:hover{background:var(--bg);}
+
+    /* ── CONTENT ── */
+    .content{padding:2rem;flex:1;}
+
+    /* ── TABS ── */
+    .tab-panels .tab-panel{display:none;}
+    .tab-panels .tab-panel.active{display:block;}
+
+    /* ── STAT CARDS ── */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.75rem;}
+    .stat-card{
+      background:white;border-radius:14px;padding:1.1rem 1.4rem;
+      box-shadow:0 1px 8px rgba(4,44,83,0.06);border:1px solid var(--border);
+      animation:fadeUp 0.4s ease both;
+    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+    .stat-card:nth-child(2){animation-delay:0.06s;}
+    .stat-card:nth-child(3){animation-delay:0.12s;}
+    .stat-card:nth-child(4){animation-delay:0.18s;}
+    .stat-card:nth-child(5){animation-delay:0.24s;}
+    .stat-card:nth-child(6){animation-delay:0.30s;}
+    .stat-card:nth-child(7){animation-delay:0.36s;}
+    .stat-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:6px;}
+    .stat-val{font-size:24px;font-weight:500;color:var(--navy);}
+    .stat-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+    .stat-val.green{color:#1D9E75;} .stat-val.red{color:#A32D2D;} .stat-val.amber{color:#856404;}
+
+    /* ── SECTION TITLE ── */
+    .section-title{font-size:14px;font-weight:500;color:var(--navy);margin-bottom:1rem;padding-bottom:8px;border-bottom:2px solid var(--border);}
+
+    /* ── TABLE CARD ── */
+    .table-card{background:white;border-radius:14px;box-shadow:0 1px 8px rgba(4,44,83,0.06);border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem;}
+    table{width:100%;border-collapse:collapse;}
+    thead{background:var(--navy);}
+    thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:rgba(255,255,255,0.8);text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap;}
+    tbody tr{border-bottom:1px solid #F5F5F5;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:#FAFAFA;}
+    tbody td{padding:10px 14px;font-size:13px;vertical-align:middle;}
+    .empty-row td{text-align:center;color:var(--muted);padding:2rem;}
+
+    /* ── BADGES ── */
+    .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;}
+    .badge.active,.badge.working,.badge.paid,.badge.normal{background:#EAF3DE;color:#3B6D11;}
+    .badge.inactive,.badge.faulty,.badge.overdue,.badge.abnormal{background:#FCEBEB;color:#A32D2D;}
+    .badge.suspended,.badge.unpaid,.badge.open{background:#FFF3CD;color:#856404;}
+    .badge.resolved{background:#E6F1FB;color:#0C447C;}
+    .badge.leakage{background:#FAECE7;color:#712B13;}
+    .badge.subsidy{background:#E6F1FB;color:#0C447C;font-size:10px;}
+
+    /* ── ACTION BUTTONS ── */
+    .act-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--navy);transition:all 0.15s;}
+    .act-btn:hover{background:var(--bg);}
+    .act-btn.resolve{border-color:#C0DD97;color:#3B6D11;}
+    .act-btn.resolve:hover{background:#EAF3DE;}
+    .act-btn.activate{border-color:#C0DD97;color:#3B6D11;}
+    .act-btn.activate:hover{background:#EAF3DE;}
+    .act-btn.deactivate{border-color:#F7C1C1;color:#A32D2D;}
+    .act-btn.deactivate:hover{background:#FCEBEB;}
+
+    /* ── CHARTS ── */
+    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+    .chart-card{background:white;border-radius:14px;padding:1.25rem 1.5rem;box-shadow:0 1px 8px rgba(4,44,83,0.06);border:1px solid var(--border);}
+    .chart-title{font-size:13px;font-weight:500;color:var(--navy);margin-bottom:1rem;}
+    @media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+
+    /* ── REPORT TABLES ── */
+    .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+    @media(max-width:800px){.report-grid{grid-template-columns:1fr;}}
+
+    /* ── TOAST ── */
+    .toast{display:none;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:1rem;font-weight:500;}
+    .toast.success{background:#EAF3DE;color:#3B6D11;display:block;}
+    .toast.error{background:#FCEBEB;color:#A32D2D;display:block;}
+
+    /* ── ALERT CARD (highlighted) ── */
+    .alert-urgent{border-left:3px solid #E24B4A!important;}
+    .alert-warn{border-left:3px solid #EF9F27!important;}
+
+    /* ── SEARCH ── */
+    .search-bar{padding:8px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:220px;transition:border-color 0.2s;}
+    .search-bar:focus{border-color:var(--blue);}
+
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(4,44,83,0.2);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="drop"><svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0014 0C19 10.5 12 2 12 2z"/></svg></div>
+    <h2>Water Management<br>System</h2>
+    <span class="admin-chip">ADMIN</span>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <button class="nav-item active" onclick="switchTab('overview',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </button>
+    <button class="nav-item" onclick="switchTab('customers',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Customers
+    </button>
+    <button class="nav-item" onclick="switchTab('alerts',this)" id="nav-alerts">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alerts
+      <span id="alert-badge" style="margin-left:auto;background:#E24B4A;color:white;font-size:10px;padding:1px 7px;border-radius:20px;display:none"></span>
+    </button>
+    <button class="nav-item" onclick="switchTab('reports',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      Reports
+    </button>
+    <button class="nav-item" onclick="switchTab('dues',this)" id="nav-dues">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Outstanding Dues
+      <span id="dues-badge" style="margin-left:auto;background:#E24B4A;color:white;font-size:10px;padding:1px 7px;border-radius:20px;display:none"></span>
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Actions</div>
+    <button class="nav-item" onclick="window.location.href='add_reading.html'">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Add Reading
+    </button>
+    <button class="nav-item" onclick="window.location.href='bill_management.html'">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Bill Management
+    </button>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Overview</span>
+    <div class="topbar-right">
+      <span class="admin-tag" id="admin-name">admin</span>
+      <button class="topbar-action btn-outline" onclick="refreshAll()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="toast" class="toast"></div>
+
+    <div class="tab-panels">
+
+      <!-- ══════════════════════════════════════════
+           TAB 1: OVERVIEW
+      ══════════════════════════════════════════ -->
+      <div class="tab-panel active" id="panel-overview">
+        <div class="stat-grid" id="stat-grid">
+          <div class="stat-card"><div class="stat-label">Total Customers</div><div class="stat-val" id="s-customers">—</div></div>
+          <div class="stat-card"><div class="stat-label">Active Connections</div><div class="stat-val green" id="s-connections">—</div></div>
+          <div class="stat-card"><div class="stat-label">Faulty Meters</div><div class="stat-val red" id="s-faulty">—</div></div>
+          <div class="stat-card"><div class="stat-label">Open Alerts</div><div class="stat-val amber" id="s-alerts">—</div></div>
+          <div class="stat-card"><div class="stat-label">Billed This Month</div><div class="stat-val" id="s-billed">—</div><div class="stat-sub">Total invoiced</div></div>
+          <div class="stat-card"><div class="stat-label">Collected This Month</div><div class="stat-val green" id="s-collected">—</div></div>
+          <div class="stat-card"><div class="stat-label">Outstanding</div><div class="stat-val red" id="s-outstanding">—</div><div class="stat-sub" id="s-unpaid-count"></div></div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-title">Monthly Revenue (last 6 months)</div>
+            <canvas id="chart-revenue" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Bill Status Breakdown</div>
+            <canvas id="chart-status" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Alerts preview -->
+        <div class="section-title">Open Alerts</div>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>Alert #</th><th>Type</th><th>Customer</th><th>Date</th><th>Action</th></tr></thead>
+            <tbody id="overview-alerts-tbody"><tr class="empty-row"><td colspan="5"><span class="spinner"></span>Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           TAB 2: CUSTOMERS
+      ══════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-customers">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px;">
+          <div class="section-title" style="margin:0;border:none;padding:0">All Customers</div>
+          <input class="search-bar" type="text" placeholder="Search by name or ID..." oninput="filterCustomers(this.value)"/>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Name</th><th>Address</th><th>Income</th>
+                <th>Connection</th><th>Meter</th><th>Outstanding</th><th>Status</th><th>Meter Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-tbody"><tr class="empty-row"><td colspan="9"><span class="spinner"></span>Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           TAB 3: ALERTS
+      ══════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-alerts">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <div class="section-title" style="margin:0;border:none;padding:0">Open Alerts</div>
+          <button class="topbar-action btn-primary" onclick="loadAlerts()">↻ Refresh Alerts</button>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Alert #</th><th>Type</th><th>Customer</th><th>Address</th><th>Meter #</th><th>Consumption</th><th>Date</th><th>Action</th></tr>
+            </thead>
+            <tbody id="alerts-tbody"><tr class="empty-row"><td colspan="8"><span class="spinner"></span>Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           TAB 4: REPORTS
+      ══════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-reports">
+        <div class="section-title">Monthly Billing Report</div>
+        <div class="table-card" style="margin-bottom:1.5rem;">
+          <table>
+            <thead><tr><th>Month</th><th>Total Bills</th><th>Total Billed</th><th>Collected</th><th>Outstanding</th><th>Collection Rate</th></tr></thead>
+            <tbody id="monthly-tbody"><tr class="empty-row"><td colspan="6"><span class="spinner"></span>Loading...</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="report-grid">
+          <div>
+            <div class="section-title">Top 5 Water Consumers</div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>#</th><th>Customer</th><th>Total Units</th><th>Readings</th></tr></thead>
+                <tbody id="top-tbody"><tr class="empty-row"><td colspan="4">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="section-title">Areas with Abnormal Usage</div>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Address</th><th>Total Alerts</th><th>Leakage</th><th>Abnormal</th></tr></thead>
+                <tbody id="areas-tbody"><tr class="empty-row"><td colspan="4">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           TAB 5: OUTSTANDING DUES
+      ══════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-dues">
+
+        <!-- Summary Cards -->
+        <div class="stat-grid" style="margin-bottom:1.5rem;">
+          <div class="stat-card">
+            <div class="stat-label">Total Outstanding</div>
+            <div class="stat-val red" id="d-total-amount">—</div>
+            <div class="stat-sub">All unpaid + overdue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Unpaid Bills</div>
+            <div class="stat-val amber" id="d-unpaid-count">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Overdue Bills</div>
+            <div class="stat-val red" id="d-overdue-count">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Customers with Dues</div>
+            <div class="stat-val" id="d-cust-count">—</div>
+          </div>
+        </div>
+
+        <!-- Query Filters -->
+        <div class="table-card" style="padding:1.25rem 1.5rem;margin-bottom:1.25rem;">
+          <div style="font-size:13px;font-weight:500;color:var(--navy);margin-bottom:1rem;">🔍 Query Outstanding Dues</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <div>
+              <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.6px;">Status Filter</label>
+              <select id="dues-status" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+                <option value="all">All (Unpaid + Overdue)</option>
+                <option value="Unpaid">Unpaid only</option>
+                <option value="Overdue">Overdue only</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.6px;">Min Amount (৳)</label>
+              <input type="number" id="dues-min-amount" placeholder="e.g. 500" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:130px;"/>
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.6px;">Search Customer</label>
+              <input type="text" id="dues-search" placeholder="Name or ID..." style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:160px;"/>
+            </div>
+            <button class="topbar-action btn-primary" onclick="queryDues()">Run Query</button>
+            <button class="topbar-action btn-outline" onclick="resetDues()">Reset</button>
+          </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="section-title" id="dues-result-label">Outstanding Dues — All</div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Bill #</th>
+                <th>Customer</th>
+                <th>Address</th>
+                <th>Meter #</th>
+                <th>Bill Date</th>
+                <th>Fixed Bill</th>
+                <th>Tax</th>
+                <th>Penalty</th>
+                <th>Total Due</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dues-tbody">
+              <tr class="empty-row"><td colspan="10"><span class="spinner"></span>Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Per-Customer Summary -->
+        <div class="section-title" style="margin-top:1.5rem;">Outstanding Per Customer</div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Unpaid Bills</th>
+                <th>Overdue Bills</th>
+                <th>Total Outstanding</th>
+              </tr>
+            </thead>
+            <tbody id="dues-cust-tbody">
+              <tr class="empty-row"><td colspan="7"><span class="spinner"></span>Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- end tab-panels -->
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<script>
+  // ── Auth guard ────────────────────────────────────────────
+  if (!sessionStorage.getItem('admin_logged_in')) window.location.href = 'admin_login.html';
+  document.getElementById('admin-name').textContent = sessionStorage.getItem('admin_username') || 'admin';
+
+  function logout() { sessionStorage.clear(); window.location.href = 'admin_login.html'; }
+
+  // ── Utilities ─────────────────────────────────────────────
+  const fmt  = n  => '৳' + parseFloat(n||0).toFixed(2);
+  const fmtN = n  => parseFloat(n||0).toFixed(2);
+  const date = d  => d ? new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.innerHTML = msg; t.className = 'toast ' + type;
+    window.scrollTo({top:0,behavior:'smooth'});
+    setTimeout(() => t.className = 'toast', 5000);
+  }
+
+  function badgeHTML(status, extra='') {
+    const cls = (status||'').toLowerCase().replace(/\s+/g,'-');
+    return `<span class="badge ${cls}">${status||'—'}</span>${extra}`;
+  }
+
+  // ── Tab switching ─────────────────────────────────────────
+  const tabTitles = {overview:'Overview',customers:'All Customers',alerts:'Alerts',reports:'Reports & Analytics',dues:'Outstanding Dues'};
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-'+tab).classList.add('active');
+    if(btn) btn.classList.add('active');
+    document.getElementById('topbar-title').textContent = tabTitles[tab] || tab;
+
+    if(tab==='customers' && !customersLoaded) loadCustomers();
+    if(tab==='alerts') loadAlerts();
+    if(tab==='reports' && !reportsLoaded) loadReports();
+    if(tab==='dues' && !duesLoaded) loadDues();
+  }
+
+  // ── API helper ────────────────────────────────────────────
+  async function api(action, extra={}) {
+    const res = await fetch('admin_data.php', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action, ...extra})
+    });
+    return res.json();
+  }
+
+  // ── LOAD SUMMARY ─────────────────────────────────────────
+  let revenueChart, statusChart;
+
+  async function loadSummary() {
+    try {
+      const data = await api('get_summary');
+      if (!data.success) return;
+      const s = data.stats;
+      document.getElementById('s-customers').textContent   = s.total_customers;
+      document.getElementById('s-connections').textContent = s.active_connections;
+      document.getElementById('s-faulty').textContent      = s.faulty_meters;
+      document.getElementById('s-alerts').textContent      = s.open_alerts;
+      document.getElementById('s-billed').textContent      = fmt(s.billed_this_month);
+      document.getElementById('s-collected').textContent   = fmt(s.collected_this_month);
+      document.getElementById('s-outstanding').textContent = fmt(s.total_outstanding);
+      document.getElementById('s-unpaid-count').textContent= s.unpaid_count + ' unpaid bills';
+
+      // Alert badge in sidebar
+      if (parseInt(s.open_alerts) > 0) {
+        const ab = document.getElementById('alert-badge');
+        ab.textContent = s.open_alerts; ab.style.display = 'inline';
+      }
+    } catch(e) { showToast('Could not load summary. Is XAMPP running?', 'error'); }
+  }
+
+  // ── LOAD CHARTS ───────────────────────────────────────────
+  async function loadCharts() {
+    try {
+      const data = await api('get_reports');
+      if (!data.success) return;
+
+      // Revenue bar chart
+      const monthly = data.monthly || [];
+      const ctx1 = document.getElementById('chart-revenue').getContext('2d');
+      if (revenueChart) revenueChart.destroy();
+      revenueChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: monthly.map(m => m.month),
+          datasets: [
+            { label:'Billed', data: monthly.map(m => parseFloat(m.total_billed)), backgroundColor:'rgba(24,95,165,0.7)', borderRadius:6 },
+            { label:'Collected', data: monthly.map(m => parseFloat(m.total_collected)), backgroundColor:'rgba(29,158,117,0.7)', borderRadius:6 }
+          ]
+        },
+        options: { responsive:true, plugins:{ legend:{position:'bottom',labels:{font:{family:'DM Sans'},boxWidth:12}} }, scales:{ y:{ticks:{callback:v=>'৳'+v}} } }
+      });
+
+      // Bill status doughnut
+      const bs  = data.bill_status || [];
+      const ctx2 = document.getElementById('chart-status').getContext('2d');
+      if (statusChart) statusChart.destroy();
+      const colors = {'Paid':'#1D9E75','Unpaid':'#EF9F27','Overdue':'#E24B4A'};
+      statusChart = new Chart(ctx2, {
+        type:'doughnut',
+        data:{
+          labels: bs.map(b => b.payment_status),
+          datasets:[{ data: bs.map(b => parseFloat(b.total)), backgroundColor: bs.map(b => colors[b.payment_status]||'#888'), borderWidth:0 }]
+        },
+        options:{ responsive:true, plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans'},boxWidth:12}}} }
+      });
+    } catch(e) {}
+  }
+
+  // ── LOAD OVERVIEW ALERTS ─────────────────────────────────
+  async function loadOverviewAlerts() {
+    try {
+      const data = await api('get_alerts');
+      const tbody = document.getElementById('overview-alerts-tbody');
+      if (!data.success || data.alerts.length===0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No open alerts. All clear!</td></tr>'; return;
+      }
+      const alertClass = a => a.a_type==='Leakage'?'alert-urgent':a.a_type==='Abnormal Usage'?'alert-warn':'';
+      tbody.innerHTML = data.alerts.slice(0,5).map(a => `
+        <tr class="${alertClass(a)}">
+          <td>#${a.Alert_ID}</td>
+          <td>${badgeHTML(a.a_type)}</td>
+          <td>${a.customer_name}</td>
+          <td>${date(a.a_date)}</td>
+          <td><button class="act-btn resolve" onclick="resolveAlert(${a.Alert_ID})">Resolve</button></td>
+        </tr>`).join('');
+      if (data.alerts.length > 5) {
+        tbody.innerHTML += `<tr><td colspan="5" style="text-align:center;padding:10px;font-size:12px;color:var(--muted)">+ ${data.alerts.length-5} more alerts — <a href="#" onclick="switchTab('alerts',document.querySelector('#nav-alerts'))" style="color:var(--blue)">View all</a></td></tr>`;
+      }
+    } catch(e) {}
+  }
+
+  // ── LOAD ALL ALERTS ───────────────────────────────────────
+  async function loadAlerts() {
+    document.getElementById('alerts-tbody').innerHTML = '<tr class="empty-row"><td colspan="8"><span class="spinner"></span>Loading...</td></tr>';
+    try {
+      const data = await api('get_alerts');
+      const tbody = document.getElementById('alerts-tbody');
+      if (!data.success || data.alerts.length===0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">✓ No open alerts.</td></tr>'; return;
+      }
+      const alertClass = a => a.a_type==='Leakage'?'alert-urgent':a.a_type==='Abnormal Usage'?'alert-warn':'';
+      tbody.innerHTML = data.alerts.map(a => `
+        <tr class="${alertClass(a)}">
+          <td>#${a.Alert_ID}</td>
+          <td>${badgeHTML(a.a_type)}</td>
+          <td>${a.customer_name} <span style="color:var(--muted);font-size:11px">#${a.Customer_ID}</span></td>
+          <td style="max-width:160px;font-size:12px">${a.Address||'—'}</td>
+          <td>#${a.Meter_ID}</td>
+          <td>${fmtN(a.consumption)} units</td>
+          <td>${date(a.a_date)}</td>
+          <td><button class="act-btn resolve" onclick="resolveAlert(${a.Alert_ID})">✓ Resolve</button></td>
+        </tr>`).join('');
+    } catch(e) { showToast('Could not load alerts.', 'error'); }
+  }
+
+  async function resolveAlert(id) {
+    try {
+      const data = await api('resolve_alert', {alert_id: id});
+      showToast(data.message, data.success?'success':'error');
+      if (data.success) { loadAlerts(); loadOverviewAlerts(); loadSummary(); }
+    } catch(e) { showToast('Server error.', 'error'); }
+  }
+
+  // ── LOAD CUSTOMERS ────────────────────────────────────────
+  let allCustomers = [], customersLoaded = false;
+
+  async function loadCustomers() {
+    try {
+      const data = await api('get_customers');
+      if (!data.success) return;
+      allCustomers = data.customers;
+      customersLoaded = true;
+      renderCustomers(allCustomers);
+    } catch(e) { showToast('Could not load customers.', 'error'); }
+  }
+
+  function renderCustomers(list) {
+    const tbody = document.getElementById('customers-tbody');
+    if (!list.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="9">No customers found.</td></tr>'; return; }
+    tbody.innerHTML = list.map(c => {
+      const sub = (c.Income>0 && c.Income<30000) ? '<span class="badge subsidy">Subsidy</span>' : '';
+      const outstanding = parseFloat(c.outstanding||0);
+      const outStyle = outstanding>0 ? 'color:#A32D2D;font-weight:500' : 'color:#3B6D11';
+      const mStatus  = c.m_status || '';
+      const cStatus  = c.c_status || '';
+      const isWorking = mStatus === 'Working';
+      const meterBtn = c.Meter_ID
+        ? `<button class="act-btn ${isWorking ? 'deactivate' : 'activate'}"
+              onclick="toggleMeter(${c.Meter_ID}, '${mStatus}')">
+              ${isWorking ? '⏸ Deactivate' : '▶ Activate'}
+           </button>`
+        : '<span style="color:var(--muted);font-size:12px">No meter</span>';
+      return `<tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:12px">#${c.Customer_ID}</span></td>
+        <td>${c.Name}${sub}</td>
+        <td style="font-size:12px;max-width:160px">${c.Address||'—'}</td>
+        <td style="font-size:12px">৳${parseFloat(c.Income||0).toLocaleString()}</td>
+        <td>${c.c_type||'—'} ${badgeHTML(cStatus)}</td>
+        <td>#${c.Meter_ID||'—'} ${badgeHTML(mStatus)}</td>
+        <td style="${outStyle}">${outstanding>0 ? fmt(outstanding)+' ('+c.unpaid_bills+' bills)' : 'Clear'}</td>
+        <td>${badgeHTML(c.Status)}</td>
+        <td>${meterBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterCustomers(q) {
+    q = q.toLowerCase();
+    const filtered = allCustomers.filter(c =>
+      c.Name.toLowerCase().includes(q) ||
+      String(c.Customer_ID).includes(q) ||
+      (c.Address||'').toLowerCase().includes(q)
+    );
+    renderCustomers(filtered);
+  }
+
+  async function toggleMeter(meterId, currentStatus) {
+    const newStatus = currentStatus === 'Working' ? 'Inactive' : 'Working';
+    const action    = newStatus === 'Working' ? 'activate' : 'deactivate';
+    if (!confirm(`Are you sure you want to ${action} Meter #${meterId}?`)) return;
+    try {
+      const data = await api('toggle_meter', { meter_id: meterId, new_status: newStatus });
+      showToast(data.message, data.success ? 'success' : 'error');
+      if (data.success) {
+        customersLoaded = false;
+        loadCustomers();
+        loadSummary();
+      }
+    } catch(e) { showToast('Server error.', 'error'); }
+  }
+
+  // ── LOAD REPORTS ─────────────────────────────────────────
+  let reportsLoaded = false;
+
+  async function loadReports() {
+    try {
+      const data = await api('get_reports');
+      if (!data.success) return;
+      reportsLoaded = true;
+
+      // Monthly table
+      const mtbody = document.getElementById('monthly-tbody');
+      if (!data.monthly.length) {
+        mtbody.innerHTML = '<tr class="empty-row"><td colspan="6">No billing data yet.</td></tr>';
+      } else {
+        mtbody.innerHTML = data.monthly.map(m => {
+          const rate = m.total_billed>0 ? Math.round(m.total_collected/m.total_billed*100)+'%' : '0%';
+          return `<tr>
+            <td><strong>${m.month}</strong></td>
+            <td>${m.total_bills}</td>
+            <td>${fmt(m.total_billed)}</td>
+            <td style="color:#1D9E75">${fmt(m.total_collected)}</td>
+            <td style="color:#A32D2D">${fmt(m.total_outstanding)}</td>
+            <td><span style="font-family:'DM Mono',monospace;font-size:12px">${rate}</span></td>
+          </tr>`;
+        }).join('');
+      }
+
+      // Top consumers
+      const ttbody = document.getElementById('top-tbody');
+      if (!data.top_consumers.length) {
+        ttbody.innerHTML='<tr class="empty-row"><td colspan="4">No data yet.</td></tr>';
+      } else {
+        ttbody.innerHTML = data.top_consumers.map((c,i) => `
+          <tr>
+            <td><strong>${i+1}</strong></td>
+            <td>${c.Name} <span style="color:var(--muted);font-size:11px">#${c.Customer_ID}</span></td>
+            <td><strong>${fmtN(c.total_units)}</strong> units</td>
+            <td>${c.total_readings}</td>
+          </tr>`).join('');
+      }
+
+      // Abnormal areas
+      const atbody = document.getElementById('areas-tbody');
+      if (!data.abnormal_areas.length) {
+        atbody.innerHTML='<tr class="empty-row"><td colspan="4">No abnormal areas detected.</td></tr>';
+      } else {
+        atbody.innerHTML = data.abnormal_areas.map(a => `
+          <tr>
+            <td style="font-size:12px">${a.Address||'—'}</td>
+            <td><strong>${a.total_alerts}</strong></td>
+            <td style="color:#A32D2D">${a.leakage_alerts}</td>
+            <td style="color:#856404">${a.abnormal_alerts}</td>
+          </tr>`).join('');
+      }
+    } catch(e) { showToast('Could not load reports.', 'error'); }
+  }
+
+  // ── REFRESH ALL ───────────────────────────────────────────
+  function refreshAll() {
+    loadSummary();
+    loadCharts();
+    loadOverviewAlerts();
+    customersLoaded = false;
+    reportsLoaded   = false;
+    duesLoaded      = false;
+    const active = document.querySelector('.tab-panel.active');
+    if (active?.id==='panel-customers') loadCustomers();
+    if (active?.id==='panel-reports')   loadReports();
+    if (active?.id==='panel-dues')      loadDues();
+    showToast('Dashboard refreshed.', 'success');
+  }
+
+  // ── OUTSTANDING DUES ─────────────────────────────────────
+  let duesLoaded = false;
+  let allDues = [], allDuesCust = [];
+
+  async function loadDues() {
+    try {
+      const data = await api('get_dues');
+      if (!data.success) { showToast('Could not load dues.', 'error'); return; }
+      duesLoaded   = true;
+      allDues      = data.dues;
+      allDuesCust  = data.per_customer;
+
+      // Summary cards
+      document.getElementById('d-total-amount').textContent = fmt(data.summary.total_outstanding);
+      document.getElementById('d-unpaid-count').textContent = data.summary.unpaid_count;
+      document.getElementById('d-overdue-count').textContent= data.summary.overdue_count;
+      document.getElementById('d-cust-count').textContent   = data.summary.customers_with_dues;
+
+      // Update sidebar badge
+      const total = parseInt(data.summary.unpaid_count) + parseInt(data.summary.overdue_count);
+      if (total > 0) {
+        const db = document.getElementById('dues-badge');
+        db.textContent = total; db.style.display = 'inline';
+      }
+
+      renderDues(allDues);
+      renderDuesCust(allDuesCust);
+    } catch(e) { showToast('Could not load dues. Is XAMPP running?', 'error'); }
+  }
+
+  function renderDues(list) {
+    const tbody = document.getElementById('dues-tbody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">✓ No outstanding dues found.</td></tr>'; return;
+    }
+    tbody.innerHTML = list.map(b => `
+      <tr>
+        <td>#${b.Bill_ID}</td>
+        <td>${b.customer_name}<br><span style="color:var(--muted);font-size:11px">#${b.Customer_ID}</span></td>
+        <td style="font-size:12px;max-width:130px">${b.Address||'—'}</td>
+        <td>#${b.Meter_ID}</td>
+        <td>${date(b.bill_date)}</td>
+        <td>${fmt(b.fixed_bill)}</td>
+        <td>${fmt(b.tax)}</td>
+        <td style="color:#A32D2D">${fmt(b.penalty)}</td>
+        <td><strong>${fmt(b.total_due)}</strong></td>
+        <td>${badgeHTML(b.payment_status)}</td>
+      </tr>`).join('');
+    document.getElementById('dues-result-label').textContent = `Outstanding Dues — ${list.length} bill(s) found`;
+  }
+
+  function renderDuesCust(list) {
+    const tbody = document.getElementById('dues-cust-tbody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No customers with outstanding dues.</td></tr>'; return;
+    }
+    tbody.innerHTML = list.map(c => `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:12px">#${c.Customer_ID}</span></td>
+        <td><strong>${c.Name}</strong></td>
+        <td>${c.phone||'—'}</td>
+        <td style="font-size:12px">${c.Address||'—'}</td>
+        <td style="color:#856404;font-weight:500">${c.unpaid_bills}</td>
+        <td style="color:#A32D2D;font-weight:500">${c.overdue_bills}</td>
+        <td><strong style="color:#A32D2D">${fmt(c.total_outstanding)}</strong></td>
+      </tr>`).join('');
+  }
+
+  function queryDues() {
+    const status    = document.getElementById('dues-status').value;
+    const minAmount = parseFloat(document.getElementById('dues-min-amount').value) || 0;
+    const search    = document.getElementById('dues-search').value.toLowerCase();
+
+    let filtered = allDues.filter(b => {
+      const matchStatus = status === 'all' || b.payment_status === status;
+      const matchAmount = parseFloat(b.total_due) >= minAmount;
+      const matchSearch = !search ||
+        b.customer_name.toLowerCase().includes(search) ||
+        String(b.Customer_ID).includes(search);
+      return matchStatus && matchAmount && matchSearch;
+    });
+
+    let filteredCust = allDuesCust.filter(c => {
+      const matchSearch = !search ||
+        c.Name.toLowerCase().includes(search) ||
+        String(c.Customer_ID).includes(search);
+      const matchStatus = status === 'all' ||
+        (status === 'Unpaid'  && c.unpaid_bills  > 0) ||
+        (status === 'Overdue' && c.overdue_bills > 0);
+      return matchSearch && matchStatus;
+    });
+
+    renderDues(filtered);
+    renderDuesCust(filteredCust);
+  }
+
+  function resetDues() {
+    document.getElementById('dues-status').value     = 'all';
+    document.getElementById('dues-min-amount').value = '';
+    document.getElementById('dues-search').value     = '';
+    renderDues(allDues);
+    renderDuesCust(allDuesCust);
+    document.getElementById('dues-result-label').textContent = 'Outstanding Dues — All';
+  }
+
+  // ── INIT ─────────────────────────────────────────────────
+  loadSummary();
+  loadCharts();
+  loadOverviewAlerts();
+</script>
+</body>
+</html>
